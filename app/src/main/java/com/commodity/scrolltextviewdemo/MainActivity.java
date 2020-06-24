@@ -23,6 +23,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import rx.Observable;
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     Button button;
     private SpannableString spannableString;
     private TextView span_txt;
+    private HashMap<String, Bitmap> bitmapsmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,51 +56,88 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Bitmap> bitmaps =new ArrayList<>();
         Log.d("Parsing started","started");
         spannableString = new SpannableString("");
-
+        bitmapsmap =new HashMap<>();
         if (mImageLoadSubscription != null) {
             mImageLoadSubscription.unsubscribe();
         }
 
-            mImageLoadSubscription = getIds()
-                    .flatMapIterable(ids -> ids)
-                    .concatMap(loadImageBitmapFromUrl())
-                    .compose(applySchedulers())
-                    .subscribe(new Subscriber<Bitmap>() {
-                        @Override
-                        public void onNext(Bitmap bitmap) {
-                            Log.d("Parsing started index",String.valueOf(i));
-                            i++;
-                            //imageview.setImageBitmap(bitmap);
-                            bitmaps.add(bitmap);
-                           //imageview.setImageBitmap(bitmap);
-                        }
+        mImageLoadSubscription = getIds()
+                .flatMapIterable(ids -> ids)
+                .concatMap(loadImageBitmapFromUrl())
+                .compose(applySchedulers())
+                .subscribe(new Subscriber<MyResult>() {
+                    @Override
+                    public void onNext(MyResult myResult) {
+                        Log.d("Parsing started index",String.valueOf(i));
+                        i++;
+                        //imageview.setImageBitmap(bitmap);
+                        bitmapsmap.put(myResult.getName(),myResult.getBitmap());
+                        //imageview.setImageBitmap(bitmap);
+                    }
 
-                        @Override
-                        public void onError(Throwable e) {
-                            Log.e("Parsing started index","error");
-                            handleImageDownloadError(e);
-                            mImageLoadSubscription.unsubscribe();
-                        }
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e("Parsing started index","error");
+                        handleImageDownloadError(e);
+                        mImageLoadSubscription.unsubscribe();
+                    }
 
-                        @Override
-                        public void onCompleted() {
-                            Log.d("Parsing completed","completed");
-                            span_txt.setText(spannableString);
-                            mImageLoadSubscription.unsubscribe();
-                        }
-                    });
+                    @Override
+                    public void onCompleted() {
+                        Log.d("Parsing completed","completed");
+                        span_txt.setText(spannableString);
+                        mImageLoadSubscription.unsubscribe();
+                    }
+                });
 
 
+//        ArrayList<String> arrayList =craeteurllist();
+//        for (int i=0;i<arrayList.size();i++)
+//        {
+//            int finalI = i;
+//            mImageLoadSubscription = getId(arrayList.get(i))
+//                    .concatMap(loadImageBitmapFromUrl())
+//                    .compose(applySchedulers())
+//                    .subscribe(new Subscriber<Bitmap>() {
+//                        @Override
+//                        public void onNext(Bitmap bitmap) {
+//                            Log.d("Parsing started index",String.valueOf(finalI));
+//                            //imageview.setImageBitmap(bitmap);
+//                            bitmaps.add(bitmap);
+//                            //imageview.setImageBitmap(bitmap);
+//                        }
+//
+//                        @Override
+//                        public void onError(Throwable e) {
+//                            Log.e("Parsing started index","error");
+//                            handleImageDownloadError(e);
+//                            mImageLoadSubscription.unsubscribe();
+//                        }
+//
+//                        @Override
+//                        public void onCompleted() {
+//
+//                            span_txt.setText(spannableString);
+//                            mImageLoadSubscription.unsubscribe();
+//                        }
+//                    });
+//        }
+        Log.d("Parsing completed","completed");
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                imageview.setImageBitmap(bitmaps.get(Integer.parseInt(edtxt.getText().toString())));
+
+              imageview.setImageBitmap(bitmapsmap.get("https://akm-img-a-in.tosshub.com/indiatoday/images/story/202005/David-Miller-IPL-1-647x363.jpeg?4VEyBDQSJof0ACmWaPri7LYbKjzUGsM2"));
+              //  imageview.setImageBitmap(bitmaps.get(Integer.parseInt(edtxt.getText().toString())));
             }
         });
     }
     private Observable<List<String>> getIds() {
         ArrayList<String> imagelist=craeteurllist();
         return Observable.just(imagelist);
+    }
+    private Observable<String> getId(String s) {
+        return Observable.just(s);
     }
 //    public class Item {
 //        String id;
@@ -318,8 +357,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @NonNull
-    private Func1<String, Observable<? extends Bitmap>> loadImageBitmapFromUrl() {
-        return imageUrl -> mPhotoLoader.load(imageUrl);
+    private Func1<String, Observable<? extends MyResult>> loadImageBitmapFromUrl() {
+        return new Func1<String, Observable<? extends MyResult>>() {
+            @Override
+            public Observable<? extends MyResult> call(String imageUrl) {
+                return mPhotoLoader.load(imageUrl);
+            }
+        };
     }
     public static <T> Observable.Transformer<T, T> applySchedulers() {
         return observable -> observable

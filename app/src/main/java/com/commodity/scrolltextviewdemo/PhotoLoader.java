@@ -1,5 +1,6 @@
 package com.commodity.scrolltextviewdemo;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.Log;
@@ -7,6 +8,7 @@ import android.util.Log;
 import rx.Observable;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
 /**
  * Helper class for loading photos.
@@ -53,10 +55,25 @@ public class PhotoLoader {
      * 2. Disk cache   — if it was ever downloaded
      * 3. Network      — if it was never downloaded
      */
-    public Observable<Bitmap> load(String imageUrl) {
-        return Observable.just(imageUrl).flatMap(findImageSource());
-    }
 
+    public Observable<MyResult> load(String imageUrl) {
+
+        return Observable.just(imageUrl).flatMap(findImageSource()).subscribeOn(Schedulers.computation()).map(new Func1<Bitmap, MyResult>() {
+            @Override
+            public MyResult call(Bitmap bitmap) {
+                return new MyResult(imageUrl,bitmap);
+            }
+        });
+    }
+    public Observable<Bitmap> getBitmapFromURL(String imageUrl) {
+
+        return Observable.just(imageUrl).flatMap(findImageSource()).subscribeOn(Schedulers.computation()).map(new Func1<Bitmap, Bitmap>() {
+            @Override
+            public Bitmap call(Bitmap bitmap) {
+                return bitmap;
+            }
+        });
+    }
     private Func1<String, Observable<Bitmap>> findImageSource() {
         return imageUrl -> {
             Log.d(TAG, "Loading image Url: " + imageUrl);

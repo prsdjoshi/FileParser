@@ -48,6 +48,7 @@ public class CSVReader {
             boolean quote_open = false;
             while ((csvLine = reader.readLine()) != null) {
                 //String[] row = csvLine.split(",");// simple way
+                Log.d("csv reader line: ",reader.readLine());
                 StringDArray a=new StringDArray();
                 String token="";
                 csvLine+=Separator;
